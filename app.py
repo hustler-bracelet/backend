@@ -1,14 +1,21 @@
-# -*- coding: utf-8 -*-
+import logging
 
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from datetime import datetime
+
+from src.api import activities_router
+
+
+logging.basicConfig(
+    level=logging.INFO,
+    format='%(asctime)s - %(name)s - %(levelname)s - %(message)s'
+)
 
 app = FastAPI()
 
 origins = [
-    'nsdkin.ru'
+    'nsdkin.ru',
+    'webapp.c.nsdkin.ru',
 ]
 
 app.add_middleware(
@@ -19,42 +26,4 @@ app.add_middleware(
     allow_headers=['*']
 )
 
-
-class ActivityTask(BaseModel):
-    name: str
-    description: str
-    deadline: datetime
-    points: int
-
-
-class Niche(BaseModel):
-    name: str
-    description: str
-    task: ActivityTask
-
-
-class Activity(BaseModel):
-    name: str
-    description: str
-    fund: int
-    places: int
-    deadline: datetime
-
-
-class ActivityStartRequestData(BaseModel):
-    activity: Activity
-    niches: list[Niche]
-
-
-class ActivityStartResponseData(BaseModel):
-    did_start_activity: bool
-    description: str
-
-
-@app.post('/send_data')
-async def send_data_handler(data: ActivityStartRequestData) -> ActivityStartResponseData:
-    print(data.model_dump_json(indent=4))
-    return ActivityStartResponseData(
-        did_start_activity=True,
-        description='Активность успешно запущена'
-    )
+app.include_router(activities_router)
