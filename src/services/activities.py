@@ -8,7 +8,7 @@ from sqlalchemy.orm import selectinload
 from src.repos import Repository
 from src.api.schemas.activities import ActivityDataCreate, ActivityStartRequestData
 from src.common.emoji import EmojiParser, EmojiName
-from src.common.exceptions import InvalidNameError, InvalidDeadlineError
+from src.common.exceptions import InvalidNameError, InvalidDeadlineError, CurrentActivityError
 
 from .base import BaseDatabaseService
 from .niches import NichesService
@@ -47,9 +47,9 @@ class ActivitiesService(BaseDatabaseService):
     async def get_current(self) -> Activity | None:
         """Получить текущую активность"""
         return await self._repo.filter_by(
-            is_active=True,
+            is_running=True,
             options=[
-                selectinload(Activity.niches).options(selectinload(Niche.tasks)),
+                selectinload(Activity.niches).options(selectinload(Niche.tasks))
             ]
         )
 
@@ -71,7 +71,10 @@ class ActivityEventsService(BaseDatabaseService):
         """
         log.info(f'Starting activity -- {request.activity.name}')
 
-        # TODO: проверить, что нет активной активности с таким же названием
+        previous_activity = await self._activities_service.get_current()
+
+        if previous_activity:
+            raise CurrentActivityError('There is already an active activity')
 
         # NOTE: создаем основную активность
         activity = await self._activities_service.create_new(request.activity)

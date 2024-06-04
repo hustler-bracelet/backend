@@ -34,7 +34,7 @@ class ActivityDataResponse(BaseModel):
     started_on: datetime
     deadline: datetime
 
-    niches: list[NicheData]
+    niches: list['NicheDataResponse']
 
     class Config:
         orm_mode = True
@@ -46,7 +46,7 @@ class NicheDataResponse(BaseModel):
     name: str
     description: str
 
-    tasks: list[ActivityTaskData]
+    tasks: list['ActivityTaskDataResponse']
 
     class Config:
         orm_mode = True
@@ -56,6 +56,7 @@ class ActivityTaskDataResponse(BaseModel):
     name: str
     description: str
     points: int
+    added_on: datetime
     deadline: datetime
 
     class Config:

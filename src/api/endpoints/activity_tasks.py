@@ -14,7 +14,7 @@ router = APIRouter(
 )
 
 
-@router.get('/activities/current/niches/{niche_id}/tasks/current')
+@router.get('/niches/{niche_id}/tasks/current')
 async def get_current_task(niche_id: int, session: Annotated[AsyncSession, Depends(get_session)]) -> ActivityTaskDataResponse:
     """Получить текущую задачу для ниши"""
     result = await ActivityTasksService(session).get_current(niche_id)

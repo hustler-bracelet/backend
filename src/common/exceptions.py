@@ -5,3 +5,7 @@ class InvalidNameError(Exception):
 
 class InvalidDeadlineError(Exception):
     pass
+
+
+class CurrentActivityError(Exception):
+    pass

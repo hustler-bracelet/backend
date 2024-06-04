@@ -1,5 +1,6 @@
 
 from sqlalchemy import select
+from datetime import datetime
 
 from src.database.models import ActivityTask
 
@@ -13,7 +14,10 @@ class ActivityTasksRepository(Repository):
     async def get_current_by_niche(self, niche_id: int) -> ActivityTask | None:
         query = (
             select(ActivityTask)
-            .filter_by(niche_id=niche_id, is_active=True)
+            .where(
+                ActivityTask.niche_id == niche_id,
+                ActivityTask.deadline >= datetime.utcnow(),
+            )
             .order_by(ActivityTask.deadline.desc())
         )
 
