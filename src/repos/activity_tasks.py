@@ -1,5 +1,4 @@
 
-from typing import override
 from sqlalchemy import select
 
 from src.database.models import ActivityTask
@@ -8,7 +7,6 @@ from .generic import Repository
 
 
 class ActivityTasksRepository(Repository):
-    @override
     def __init__(self, session):
         super().__init__(ActivityTask, session)
 
