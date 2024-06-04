@@ -3,7 +3,11 @@ import logging
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from src.api import activities_router
+from src.api import (
+    activities_router,
+    activity_tasks_router,
+    niches_router,
+)
 
 
 logging.basicConfig(
@@ -27,3 +31,5 @@ app.add_middleware(
 )
 
 app.include_router(activities_router)
+app.include_router(activity_tasks_router)
+app.include_router(niches_router)
