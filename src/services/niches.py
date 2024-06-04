@@ -1,6 +1,8 @@
 
 from datetime import datetime
 
+from sqlalchemy.orm import selectinload
+
 from src.repos import Repository
 from src.database.models import Niche, Activity
 from src.common.emoji import EmojiParser, EmojiName
@@ -37,3 +39,7 @@ class NichesService(BaseDatabaseService):
         )
 
         return await self._repo.create(model)
+
+    async def get_by_id(self, _id: int) -> Niche | None:
+        """Получить текущую нишу"""
+        return await self._repo.get_by_pk(_id, options=[selectinload(Niche.tasks)])

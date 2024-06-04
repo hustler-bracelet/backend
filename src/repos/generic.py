@@ -1,9 +1,9 @@
 
-from typing import TypeVar, Generic, Literal, Type
+from typing import TypeVar, Generic, Type
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.database.models import BaseModel, create_int_uid
+from src.database.models import BaseModel
 
 
 M = TypeVar('M', bound=BaseModel)
@@ -71,9 +71,9 @@ class Repository(Generic[M]):
         self._session = session
         self._parser = SimpleQueryParser(delimiter='__')
 
-    async def get_by_pk(self, pk: int) -> M:
+    async def get_by_pk(self, pk: int, options: list | None = None) -> M:
         """Get record by primary key"""
-        return await self._session.get(self._model, pk)
+        return await self._session.get(self._model, pk, options=options)
 
     async def filter(self, **kwargs) -> list[M]:
         """
@@ -101,6 +101,18 @@ class Repository(Generic[M]):
                 raise QueryActionNotAllowedError(f'Unsupported action: {action}')
 
         return await self._session.execute(query)
+
+    async def filter_by(self, options: list | None = None, **filters) -> M | None:
+        query = (
+            select(self._model)
+            .filter_by(**filters)
+            .order_by(self._model.id.asc())
+        )
+
+        if options:
+            query = query.options(*options)
+
+        return (await self._session.execute(query)).scalars().first()
 
     async def create(self, model: M, with_commit: bool = True) -> M:
         """Create model in database"""

@@ -3,8 +3,10 @@ import logging
 
 from src.database.models import Activity, Niche, ActivityTask, create_int_uid
 
+from sqlalchemy.orm import selectinload
+
 from src.repos import Repository
-from src.api.schemas.activities import ActivityData, ActivityStartRequestData
+from src.api.schemas.activities import ActivityDataCreate, ActivityStartRequestData
 from src.common.emoji import EmojiParser, EmojiName
 from src.common.exceptions import InvalidNameError, InvalidDeadlineError
 
@@ -20,7 +22,7 @@ class ActivitiesService(BaseDatabaseService):
     def post_init(self):
         self._repo = Repository(Activity, self._session)
 
-    async def create_new(self, activity: ActivityData) -> Activity:
+    async def create_new(self, activity: ActivityDataCreate) -> Activity:
         """
         Create new activity
 
@@ -42,6 +44,14 @@ class ActivitiesService(BaseDatabaseService):
 
         return await self._repo.create(model)
 
+    async def get_current(self) -> Activity | None:
+        """Получить текущую активность"""
+        return await self._repo.filter_by(
+            is_active=True,
+            options=[
+                selectinload(Activity.niches).options(selectinload(Niche.tasks)),
+            ]
+        )
 
 class ActivityEventsService(BaseDatabaseService):
     def post_init(self):
@@ -60,6 +70,8 @@ class ActivityEventsService(BaseDatabaseService):
         :return: started activity
         """
         log.info(f'Starting activity -- {request.activity.name}')
+
+        # TODO: проверить, что нет активной активности с таким же названием
 
         # NOTE: создаем основную активность
         activity = await self._activities_service.create_new(request.activity)

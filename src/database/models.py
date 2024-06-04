@@ -67,6 +67,8 @@ class ActivityTask(BaseModel):
     added_on: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     deadline: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
 
+    niche = relationship('Niche', backref='activity_tasks')
+
 
 class Activity(BaseModel):
     __tablename__ = 'activity'
@@ -81,6 +83,8 @@ class Activity(BaseModel):
     started_on: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, server_default=func.now())
     deadline: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     is_running: Mapped[bool] = mapped_column(default=True)
+
+    niches = relationship('Niche', backref='tasks')
 
 
 class Asset(BaseModel):
@@ -135,6 +139,9 @@ class Niche(BaseModel):
     name: Mapped[str] = mapped_column(Text)
     emoji: Mapped[str] = mapped_column(Text)
     description: Mapped[str] = mapped_column(Text)
+
+    activity = relationship("Activity", backref="niches")
+    tasks = relationship("ActivityTask", backref="niche")
 
 
 class Payment(BaseModel):

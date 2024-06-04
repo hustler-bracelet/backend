@@ -16,7 +16,7 @@ class NicheData(BaseModel):
     task: ActivityTaskData
 
 
-class ActivityData(BaseModel):
+class ActivityDataCreate(BaseModel):
     name: str
     description: str
     fund: int
@@ -24,8 +24,46 @@ class ActivityData(BaseModel):
     deadline: datetime
 
 
+class ActivityDataResponse(BaseModel):
+    id: int
+    emoji: str
+    name: str
+    description: str
+    fund: int
+    total_places: int
+    started_on: datetime
+    deadline: datetime
+
+    niches: list[NicheData]
+
+    class Config:
+        orm_mode = True
+
+
+class NicheDataResponse(BaseModel):
+    id: int
+    emoji: str
+    name: str
+    description: str
+
+    tasks: list[ActivityTaskData]
+
+    class Config:
+        orm_mode = True
+
+class ActivityTaskDataResponse(BaseModel):
+    id: int
+    name: str
+    description: str
+    points: int
+    deadline: datetime
+
+    class Config:
+        orm_mode = True
+
+
 class ActivityStartRequestData(BaseModel):
-    activity: ActivityData
+    activity: ActivityDataCreate
     niches: list[NicheData]
 
 

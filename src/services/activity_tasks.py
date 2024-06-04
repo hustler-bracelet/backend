@@ -1,6 +1,6 @@
 
 from src.database.models import ActivityTask, Niche
-from src.repos import Repository
+from src.repos.activity_tasks import ActivityTasksRepository
 
 from src.api.schemas.activities import ActivityTaskData
 
@@ -9,7 +9,7 @@ from .base import BaseDatabaseService
 
 class ActivityTasksService(BaseDatabaseService):
     def post_init(self):
-        self._repo = Repository(ActivityTask, self._session)
+        self._repo = ActivityTasksRepository(self._session)
 
     async def create_new(self, activity_task: ActivityTaskData, niche: Niche) -> ActivityTask:
         """
@@ -25,3 +25,7 @@ class ActivityTasksService(BaseDatabaseService):
         )
 
         return await self._repo.create(model)
+
+    async def get_current(self, niche_id: str) -> ActivityTask | None:
+        """Получить текущую задачу активности для ниши"""
+        return await self._repo.get_current_by_niche(niche_id)
