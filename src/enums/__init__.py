@@ -5,11 +5,11 @@ from .payments import (
 )
 
 from .tasks import (
-    CompletionStatus,
+    TaskCompletionStatus,
 )
 
 __all__ = [
     'PaymentReason',
     'PayoutReason',
-    'CompletionStatus',
+    'TaskCompletionStatus',
 ]

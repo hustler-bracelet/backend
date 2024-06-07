@@ -12,7 +12,7 @@ from sqlalchemy.sql import func
 from datetime import datetime, date
 
 from src.enums import (
-    CompletionStatus, 
+    TaskCompletionStatus, 
     PayoutReason, 
     PaymentReason,
 )
@@ -42,18 +42,23 @@ class User(BaseModel):
         onupdate=func.now(),
     )
 
+    activity_tasks: Mapped[list['ActivityTaskCompletion']] = relationship('ActivityTaskCompletion', back_populates='user')
+
 
 class ActivityTaskCompletion(BaseModel):
-    __tablename__ = 'activity_task_completion'
+    __tablename__ = 'activity_task_completions'
 
     id: Mapped[int] = mapped_column(primary_key=True, default=create_int_uid)
-    telegram_id: Mapped[int] = mapped_column(BigInteger())
+    telegram_id: Mapped[int] = mapped_column(ForeignKey('user.telegram_id'))
     activity_task_id: Mapped[int] = mapped_column(ForeignKey('activity_task.id'))
     proof_id: Mapped[int] = mapped_column(ForeignKey('task_completion_proof.id'))
-    status: Mapped[CompletionStatus] = mapped_column(Enum(CompletionStatus), default=CompletionStatus.PENDING, server_default='PENDING')
+    status: Mapped[TaskCompletionStatus] = mapped_column(Enum(TaskCompletionStatus), default=TaskCompletionStatus.PENDING, server_default='PENDING')
     sent_on: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     checked_on: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     points: Mapped[int]
+
+    activity_task = relationship('ActivityTask', back_populates='completions')
+    user: Mapped['User'] = relationship('User', back_populates='activity_tasks')
 
 
 class ActivityTask(BaseModel):
@@ -61,13 +66,16 @@ class ActivityTask(BaseModel):
 
     id: Mapped[int] = mapped_column(primary_key=True, default=create_int_uid)
     niche_id: Mapped[int] = mapped_column(ForeignKey('niche.id'), nullable=True)
+    activity_id: Mapped[int] = mapped_column(ForeignKey('activity.id'), nullable=True)
     name: Mapped[str] = mapped_column(Text)
     description: Mapped[str] = mapped_column(Text)
     points: Mapped[int]
     added_on: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     deadline: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    is_running: Mapped[bool] = mapped_column(default=True)
 
     niche: Mapped['Niche'] = relationship('Niche', back_populates='tasks')
+    completions: Mapped[list['ActivityTaskCompletion']] = relationship('ActivityTaskCompletion', back_populates='activity_task')
 
 
 class Activity(BaseModel):

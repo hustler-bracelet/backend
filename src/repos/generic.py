@@ -102,7 +102,7 @@ class Repository(Generic[M]):
 
         return await self._session.execute(query)
 
-    async def filter_by(self, options: list | None = None, **filters) -> M | None:
+    async def filter_by(self, options: list | None = None, order_by: list | None = None, **filters):
         query = (
             select(self._model)
             .filter_by(**filters)
@@ -112,7 +112,10 @@ class Repository(Generic[M]):
         if options:
             query = query.options(*options)
 
-        return (await self._session.execute(query)).scalars().first()
+        if order_by:
+            query = query.order_by(*order_by)
+
+        return (await self._session.execute(query)).scalars()
 
     async def create(self, model: M, with_commit: bool = True) -> M:
         """Create model in database"""
@@ -136,7 +139,7 @@ class Repository(Generic[M]):
 
     async def update(self, model: M, with_commit: bool = True) -> M:
         """Update model in database"""
-        self._session.merge(model)
+        await self._session.merge(model)
         await self._session.flush()
 
         if with_commit:
@@ -153,6 +156,10 @@ class Repository(Generic[M]):
             await self._session.commit()
 
         return model
+
+    async def get_all(self) -> list[M]:
+        """Get all records"""
+        return (await self._session.execute(select(self._model))).scalars().all()
 
     async def commit(self):
         await self._session.commit()

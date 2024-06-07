@@ -1,5 +1,5 @@
 
-from src.database.models import ActivityTask, Niche
+from src.database.models import ActivityTask, Niche, Activity
 from src.repos.activity_tasks import ActivityTasksRepository
 
 from src.api.schemas.activities import ActivityTaskData
@@ -11,7 +11,7 @@ class ActivityTasksService(BaseDatabaseService):
     def post_init(self):
         self._repo = ActivityTasksRepository(self._session)
 
-    async def create_new(self, activity_task: ActivityTaskData, niche: Niche) -> ActivityTask:
+    async def create_new(self, activity_task: ActivityTaskData, niche: Niche, activity: Activity) -> ActivityTask:
         """
         Create new activity task
 
@@ -22,6 +22,7 @@ class ActivityTasksService(BaseDatabaseService):
         model = ActivityTask(
             **activity_task.model_dump(),
             niche_id=niche.id,
+            activity_id=activity.id,
         )
 
         return await self._repo.create(model)
