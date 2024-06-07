@@ -20,9 +20,9 @@ router = APIRouter(
 
 @router.post('/send_data', status_code=status.HTTP_201_CREATED)
 async def send_data_handler(
-    data: ActivityStartRequestData, 
+    data: dict, 
     session: Annotated[AsyncSession, Depends(get_session)]
-) -> ActivityStartResponseData:
+) -> dict:
 
     # activity: Activity = await ActivityEventsService(session).create_event(data)
 
