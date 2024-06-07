@@ -28,7 +28,8 @@ async def send_data_handler(
 
     return ActivityStartResponseData(
         did_start_activity=True,
-        description=f'Активность {activity.name} успешно запущена!'
+        #description=f'Активность {activity.name} успешно запущена!'
+        description='Активность запущена!'
     )
 
 
