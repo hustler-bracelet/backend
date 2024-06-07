@@ -20,6 +20,9 @@ app = FastAPI()
 origins = [
     'nsdkin.ru',
     'webapp.c.nsdkin.ru',
+    'https://webapp.c.nsdkin.ru',
+    'https://nsdkin.ru',
+    '*',
 ]
 
 app.add_middleware(
