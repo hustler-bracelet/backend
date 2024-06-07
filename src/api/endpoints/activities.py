@@ -22,7 +22,7 @@ router = APIRouter(
 async def send_data_handler(
     data: dict, 
     session: Annotated[AsyncSession, Depends(get_session)]
-) -> dict:
+) -> ActivityStartResponseData:
 
     # activity: Activity = await ActivityEventsService(session).create_event(data)
 
