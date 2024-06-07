@@ -47,6 +47,17 @@ async def get_current_activities(
     return result
 
 
+@router.get('/activities/{activity_id}')
+async def get_current_activity(activity_id: int, session: Annotated[AsyncSession, Depends(get_session)]) -> ActivityDataResponse:
+    """Получить текущую активность"""
+    result = await ActivitiesService(session).get_by_id(activity_id)
+
+    if not result:
+        raise HTTPException(status_code=404, detail='No active activity found')
+
+    return result
+
+
 @router.post('/activities/{activity_id}/stop')
 async def stop_activity(activity_id: int, session: Annotated[AsyncSession, Depends(get_session)]):
     """Остановить активность"""
