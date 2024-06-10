@@ -50,6 +50,17 @@ async def get_current_activities(
     return result
 
 
+@router.get('/activities/current')
+async def get_current_activity(session: Annotated[AsyncSession, Depends(get_session)]) -> ActivityDataResponse:
+    """Получить текущую активность"""
+    result = await ActivitiesService(session).get_current()
+
+    if not result:
+        raise HTTPException(status_code=404, detail='No active activity found')
+
+    return result
+
+
 @router.get('/activities/{activity_id}')
 async def get_current_activity(activity_id: int, session: Annotated[AsyncSession, Depends(get_session)]) -> ActivityDataResponse:
     """Получить текущую активность"""

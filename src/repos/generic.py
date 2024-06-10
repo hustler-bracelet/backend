@@ -106,8 +106,10 @@ class Repository(Generic[M]):
         query = (
             select(self._model)
             .filter_by(**filters)
-            .order_by(self._model.id.asc())
         )
+
+        if hasattr(self._model, 'id'):
+            query = query.order_by(self._model.id.desc())
 
         if options:
             query = query.options(*options)

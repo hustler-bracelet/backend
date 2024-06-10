@@ -186,20 +186,25 @@ class ActivityEventsService(BaseDatabaseService):
         if not activity:
             raise ActivityError(f'Activity {activity_id} not found')
 
-        leaderboard = await self._leaderboard_service.get_leaderboard_item_by_user(user, activity)
+        leaderboard = await self._leaderboard_service.get_leaderboard(activity)
+        user_leaderboard = await self._leaderboard_service.get_leaderboard_item_by_user(user, activity)
         niche = await self._niches_service.get_selected_niche(user.telegram_id)
 
         if not niche:
             raise ActivityError(f'Niche for user {user.telegram_id} not found')
 
-        current_task = None
-        for task in niche.tasks:
-            if task.is_running:
-                current_task = task
-                break
+        current_task = await self._tasks_service.get_current(niche.id, user.telegram_id)
 
-        if not current_task:
-            raise ActivityError(f'Current task for niche {niche.id} not found')
+        task_data = None
+        if current_task:
+            task_data = ActivityTaskDataResponse(
+                id=current_task.id,
+                name=current_task.name,
+                description=current_task.description,
+                points=current_task.points,
+                added_on=current_task.added_on,
+                deadline=current_task.deadline,
+            )
 
         # FIXME: чет какой-то кринж с моделью, почему-то после kwargs она отказывается работать, как orm_mode = True
         return ActivitySummaryResponse(
@@ -212,19 +217,13 @@ class ActivityEventsService(BaseDatabaseService):
             started_on=activity.started_on,
             deadline=activity.deadline,
             leaderboard_data=leaderboard,
+            user_leaderboard_data=user_leaderboard,
             niche=UserNicheResponse(
                 id=niche.id,
                 emoji=niche.emoji,
                 name=niche.name,
                 description=niche.description,
-                task=ActivityTaskDataResponse(
-                    id=current_task.id,
-                    name=current_task.name,
-                    description=current_task.description,
-                    points=current_task.points,
-                    added_on=current_task.added_on,
-                    deadline=current_task.deadline,
-                ),
+                task=task_data,
             )
         )
 

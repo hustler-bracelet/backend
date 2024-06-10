@@ -7,6 +7,7 @@ from sqlalchemy.orm import selectinload
 
 from src.database.models import ActivityTaskCompletion, Activity, User
 from src.api.schemas.leaderboard import LeaderBoardItem, EarnData
+from src.api.schemas.user import User as UserSchema
 from src.repos.activity_task_completion import ActivityTasksCompletionRepository
 
 from src.common.activity import distribute_funds
@@ -29,15 +30,15 @@ class ActivityLeaderboardService(BaseDatabaseService):
         df = pd.DataFrame([
             {
                 'telegram_id': item.user.telegram_id,
-                'name': item.user.name,
+                'name': item.user.telegram_name,
                 'sum': item.points,
             }
             for item in data
         ])
 
-        grouped_df = df.groupby(['telegram_id', 'name'], as_index=False)['points'].sum()
+        grouped_df: pd.DataFrame = df.groupby(['telegram_id', 'name'], as_index=False)['sum'].sum()
 
-        return grouped_df.to_dict(into='records')
+        return grouped_df.to_dict(orient='records')
 
     async def get_leaderboard(self, activity: Activity) -> list[LeaderBoardItem]:
         """Получить лидерборд активности"""
@@ -55,8 +56,10 @@ class ActivityLeaderboardService(BaseDatabaseService):
         for ctr, (sum, data) in enumerate(zip(distribute_funds(activity.fund, total_places), converted_data)):
             leaderboard.append(
                 LeaderBoardItem(
-                    telegram_id=data['telegram_id'],
-                    name=data['name'],
+                    user=UserSchema(
+                        telegram_id=data['telegram_id'],
+                        telegram_name=data['name'],
+                    ),
                     points=data['sum'],
                     position=ctr,
                     earn=EarnData(
@@ -72,7 +75,7 @@ class ActivityLeaderboardService(BaseDatabaseService):
         leaderbord_items: list[LeaderBoardItem] = await self.get_leaderboard(activity)
 
         for item in leaderbord_items:
-            if item.telegram_id == user.telegram_id:
+            if item.user.telegram_id == user.telegram_id:
                 return item
 
         return None

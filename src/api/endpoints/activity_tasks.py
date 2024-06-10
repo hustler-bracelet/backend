@@ -7,7 +7,7 @@ from src.services.activity_tasks import ActivityTasksService
 from src.services.niches import NichesService
 from src.database.models import Niche
 
-from src.api.schemas.activities import ActivityDataCreate, ActivityTaskDataResponse, ActivityTaskStatus, ActivityTaskCreateData
+from src.api.schemas.activities import ActivityTaskDataResponse, ActivityTaskStatus, ActivityTaskCreateData
 from src.api.schemas.user import TelegramUserID
 from src.dependencies.session import get_session
 
@@ -18,9 +18,9 @@ router = APIRouter(
 
 
 @router.get('/niches/{niche_id}/tasks/current')
-async def get_current_task(niche_id: int, session: Annotated[AsyncSession, Depends(get_session)]) -> ActivityTaskDataResponse:
+async def get_current_task(niche_id: int, user: TelegramUserID, session: Annotated[AsyncSession, Depends(get_session)]) -> ActivityTaskDataResponse:
     """Получить текущую задачу для ниши"""
-    result = await ActivityTasksService(session).get_current(niche_id)
+    result = await ActivityTasksService(session).get_current(niche_id, user.telegram_id)
 
     if not result:
         raise HTTPException(status_code=404, detail='No active activity found')
@@ -43,3 +43,9 @@ async def create_new_task(niche_id: int, activity_task: ActivityTaskCreateData, 
 async def get_task_status_for_user(task_id: int, user_id: TelegramUserID, session: Annotated[AsyncSession, Depends(get_session)]) -> ActivityTaskStatus:
     """Получить статус выполнения задачи"""
     return await ActivityTasksService(session).get_status(task_id, user_id.telegram_id)
+
+
+@router.post('/tasks/{task_id}/cancel')
+async def cancel_task(task_id: int, user: TelegramUserID, session: Annotated[AsyncSession, Depends(get_session)]):
+    """Отменить выполнение задачи"""
+    return await ActivityTasksService(session).cancel_task(task_id, user.telegram_id)

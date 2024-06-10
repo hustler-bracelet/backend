@@ -28,10 +28,10 @@ class ProofsService(BaseDatabaseService):
         return await self._repo.get_all_by_activity(activity_id=activity_id)
 
     async def get_by_id(self, proof_id: int) -> TaskCompletionProof:
-        return await self._repo.get_by_pk(proof_id)
+        return await self._repo.get_by_pk(proof_id, options=[selectinload(TaskCompletionProof.task)])
 
-    async def proof_accept(self, proof_id: int):
-        proof = await self.get_by_id(proof_id)
+    async def proof_accept(self, proof: TaskCompletionProof):
+        proof = await self.get_by_id(proof.id)
         proof.status = TaskCompletionStatus.VERIFIED
         await self._repo.update(proof, with_commit=False)
 
@@ -44,7 +44,7 @@ class ProofsService(BaseDatabaseService):
         await self._task_complete_repo.create(task, with_commit=False)
         await self._session.commit()
 
-    async def proof_decline(self, proof_id: int):
-        proof = await self.get_by_id(proof_id)
+    async def proof_decline(self, proof: TaskCompletionProof):
+        proof = await self.get_by_id(proof.id)
         proof.status = TaskCompletionStatus.REJECTED
         await self._repo.update(proof)

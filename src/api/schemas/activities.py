@@ -1,6 +1,8 @@
 
 from datetime import datetime
 from pydantic import BaseModel, Field
+from typing import Optional
+
 
 from .leaderboard import LeaderBoardItem
 
@@ -17,7 +19,6 @@ class ActivityTaskCreateData(BaseModel):
     description: str
     deadline: datetime
     points: int
-    activity_id: int
 
 
 class NicheData(BaseModel):
@@ -68,7 +69,7 @@ class UserNicheResponse(BaseModel):
     name: str
     description: str
 
-    task: 'ActivityTaskDataResponse'
+    task: Optional['ActivityTaskDataResponse']
 
     class Config:
         orm_mode = True
@@ -97,6 +98,7 @@ class ActivitySummaryResponse(BaseModel):
     deadline: datetime
 
     leaderboard_data: list[LeaderBoardItem] | None
+    user_leaderboard_data: LeaderBoardItem | None
     niche: UserNicheResponse
 
     class Config:

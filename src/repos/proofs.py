@@ -23,5 +23,6 @@ class ProofsRepository(Repository):
                 TaskCompletionProof.status == TaskCompletionStatus.PENDING,
             )
             .options(selectinload(TaskCompletionProof.user), selectinload(TaskCompletionProof.task))
+            .order_by(TaskCompletionProof.sent_on.desc())
         )
         return (await self._session.execute(query)).scalars().all()
