@@ -1,12 +1,12 @@
 
-from enum import StrEnum
+from enum import Enum
 
-class ActivityUserEventType(StrEnum):
+class ActivityUserEventType(str, Enum):
     JOIN = 'JOIN'
     LEAVE = 'LEAVE'
 
 
-class TaskCompletionStatus(StrEnum):
+class TaskCompletionStatus(str, Enum):
     PENDING = 'PENDING'
     VERIFIED = 'VERIFIED'
     REJECTED = 'REJECTED'
