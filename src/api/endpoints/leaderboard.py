@@ -12,7 +12,7 @@ from src.dependencies.session import get_session
 
 
 router = APIRouter(
-    tags=['activity_tasks'],
+    tags=['leaderboard'],
 )
 
 

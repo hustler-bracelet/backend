@@ -7,7 +7,8 @@ from src.database.models import User, Activity
 from src.services.notifications.activity import ActivityNotificationService
 from src.services.activity_leaderboard import ActivityLeaderboardService
 
-from .worker import bot, SessionMaker
+from src.database.engine import SessionMaker
+from src.common.bot import BOT as bot
 
 
 log = logging.getLogger(__name__)

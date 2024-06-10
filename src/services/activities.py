@@ -8,13 +8,17 @@ from sqlalchemy.orm import selectinload
 from src.repos import Repository
 from src.api.schemas.activities import ActivityDataCreate, ActivityStartRequestData, ActivitySummaryResponse, UserNicheResponse, ActivityTaskDataResponse
 from src.common.emoji import EmojiParser, EmojiName
-from src.common.exceptions import InvalidNameError, InvalidDeadlineError, CurrentActivityError
+from src.common.exceptions import InvalidNameError, InvalidDeadlineError, ActivityError
+
+
 from src.jobs.activity_notifications import send_start_activity_notification
-from src.services.activity_leaderboard import ActivityLeaderboardService
 
 from .base import BaseDatabaseService
 from .niches import NichesService
 from .activity_tasks import ActivityTasksService
+from .activity_leaderboard import ActivityLeaderboardService
+from .activity_task_completion import ActivityTasksCompletionService
+from .user import UsersService
 
 
 log = logging.getLogger(__name__)
@@ -70,7 +74,10 @@ class ActivitiesService(BaseDatabaseService):
 
     async def get_by_id(self, activity_id: int) -> Activity | None:
         """Получить активность по id"""
-        return await self._repo.get_by_pk(activity_id)
+        return await self._repo.get_by_pk(
+            activity_id, 
+            options=[selectinload(Activity.niches).options(selectinload(Niche.tasks))]
+        )
 
 
 class ActivityEventsService(BaseDatabaseService):
@@ -81,6 +88,8 @@ class ActivityEventsService(BaseDatabaseService):
         self._niches_service = NichesService(self._session)
         self._tasks_service = ActivityTasksService(self._session)
         self._leaderboard_service = ActivityLeaderboardService(self._session)
+        self._completion_service = ActivityTasksCompletionService(self._session)
+        self._users_service = UsersService(self._session)
 
     def validate_deadlines(self, activity_deadline: datetime, task_deadline: datetime) -> bool:
         return task_deadline < activity_deadline
@@ -113,8 +122,35 @@ class ActivityEventsService(BaseDatabaseService):
 
         log.info(f'Activity started -- id={activity.id}, name={activity.name}')
 
-        # NOTE: запускаем джобу оповещение 
+        return activity
+
+    async def start_event(self, activity_id: int) -> Activity:
+        """
+        Start activity
+
+        :param activity_id: activity id
+        :return: started activity
+        """
+        activity = await self._repo.get_by_pk(activity_id)
+
+        if not activity:
+            raise ActivityError(f'Activity {activity_id} not found')
+
+        if activity.is_running:
+            raise ActivityError(f'Activity {activity_id} is already running')
+
+        if activity.deadline < datetime.utcnow():
+            raise InvalidDeadlineError(f'Activity {activity_id} is already expired')
+
+        log.info(f'Starting activity -- id={activity.id}, name={activity.name}')
+
+        activity.is_running = True
+        await self._repo.update(activity)
+
+        # NOTE: отправляем уведомление о начале активности
         send_start_activity_notification.send(activity.id)
+
+        log.info(f'Activity started -- id={activity.id}, name={activity.name}')
 
         return activity
 
@@ -128,10 +164,10 @@ class ActivityEventsService(BaseDatabaseService):
         activity = await self._repo.get_by_pk(activity_id)
 
         if not activity:
-            raise CurrentActivityError(f'Activity {activity_id} not found')
+            raise ActivityError(f'Activity {activity_id} not found')
 
         if not activity.is_running:
-            raise CurrentActivityError(f'Activity {activity_id} is not running')
+            raise ActivityError(f'Activity {activity_id} is not running')
 
         log.info(f'Stopping activity -- id={activity.id}, name={activity.name}')
 
@@ -144,17 +180,17 @@ class ActivityEventsService(BaseDatabaseService):
 
         return activity
 
-    async def get_user_event_summary(self, user: User, activity_id: int) -> ActivitySummaryResponse:
+    async def get_user_event_summary_by_user(self, user: User, activity_id: int) -> ActivitySummaryResponse:
         activity: Activity = await self._repo.get_by_pk(activity_id)
 
         if not activity:
-            raise CurrentActivityError(f'Activity {activity_id} not found')
+            raise ActivityError(f'Activity {activity_id} not found')
 
         leaderboard = await self._leaderboard_service.get_leaderboard_item_by_user(user, activity)
         niche = await self._niches_service.get_selected_niche(user.telegram_id)
 
         if not niche:
-            raise CurrentActivityError(f'Niche for user {user.id} not found')
+            raise ActivityError(f'Niche for user {user.telegram_id} not found')
 
         current_task = None
         for task in niche.tasks:
@@ -163,8 +199,9 @@ class ActivityEventsService(BaseDatabaseService):
                 break
 
         if not current_task:
-            raise CurrentActivityError(f'Current task for niche {niche.id} not found')
+            raise ActivityError(f'Current task for niche {niche.id} not found')
 
+        # FIXME: чет какой-то кринж с моделью, почему-то после kwargs она отказывается работать, как orm_mode = True
         return ActivitySummaryResponse(
             id=activity.id,
             emoji=activity.emoji,
@@ -190,3 +227,25 @@ class ActivityEventsService(BaseDatabaseService):
                 ),
             )
         )
+
+    async def leave_event(self, user: User, activity_id: int) -> Activity:
+        """
+        Leave activity
+
+        :param user: user
+        :param activity_id: activity id
+        :return: activity
+        """
+        activity = await self._repo.get_by_pk(activity_id)
+
+        if not activity:
+            raise ActivityError(f'Activity {activity_id} not found')
+
+        if not activity.is_running:
+            raise ActivityError(f'Activity {activity_id} is not running')
+
+        log.info(f'User leaving activity -- id={activity.id}, name={activity.name}')
+
+        # NOTE: скрываем задачи из лидерборда и выходим из активности
+        await self._completion_service.hide_user_tasks(user, activity)
+        await self._users_service.leave_current_activity(user, activity)

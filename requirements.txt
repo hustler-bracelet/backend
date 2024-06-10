@@ -7,3 +7,4 @@ pandas
 dramatiq
 aiogram
 redis
+apscheduler

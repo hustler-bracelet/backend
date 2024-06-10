@@ -12,6 +12,14 @@ class ActivityTaskData(BaseModel):
     points: int
 
 
+class ActivityTaskCreateData(BaseModel):
+    name: str
+    description: str
+    deadline: datetime
+    points: int
+    activity_id: int
+
+
 class NicheData(BaseModel):
     name: str
     description: str
@@ -88,7 +96,7 @@ class ActivitySummaryResponse(BaseModel):
     started_on: datetime
     deadline: datetime
 
-    leaderboard_data: LeaderBoardItem | None
+    leaderboard_data: list[LeaderBoardItem] | None
     niche: UserNicheResponse
 
     class Config:
@@ -103,3 +111,16 @@ class ActivityStartRequestData(BaseModel):
 class ActivityStartResponseData(BaseModel):
     did_start_activity: bool
     description: str
+
+
+class ActivityUserStatusResponse(BaseModel):
+    is_running: bool
+    occupied_places: int
+    total_places: int
+    can_join: bool
+    already_joined: bool
+
+
+class ActivityTaskStatus(BaseModel):
+    can_do_task: bool
+    already_done: bool

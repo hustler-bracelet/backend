@@ -5,6 +5,7 @@ from .activities import (
     ActivityDataResponse,
     ActivityTaskDataResponse,
     NicheDataResponse,
+    ActivityUserStatusResponse,
 )
 
 __all__ = [
@@ -13,4 +14,5 @@ __all__ = [
     'ActivityDataResponse',
     'ActivityTaskDataResponse',
     'NicheDataResponse',
+    'ActivityUserStatusResponse',
 ]

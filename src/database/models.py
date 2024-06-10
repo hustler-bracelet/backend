@@ -8,6 +8,7 @@ from sqlalchemy.orm import (
     relationship,
 )
 from sqlalchemy.ext.asyncio import AsyncAttrs
+from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.sql import func
 from datetime import datetime, date
 
@@ -15,6 +16,9 @@ from src.enums import (
     TaskCompletionStatus, 
     PayoutReason, 
     PaymentReason,
+    ActivityUserEventType,
+    ActivityTaskUserEventType,
+    TaskCompletionStatus,
 )
 
 
@@ -43,6 +47,7 @@ class User(BaseModel):
     )
 
     activity_tasks: Mapped[list['ActivityTaskCompletion']] = relationship('ActivityTaskCompletion', back_populates='user')
+    proofs: Mapped[list['TaskCompletionProof']] = relationship('TaskCompletionProof', back_populates='user')
 
 
 class ActivityTaskCompletion(BaseModel):
@@ -52,10 +57,10 @@ class ActivityTaskCompletion(BaseModel):
     telegram_id: Mapped[int] = mapped_column(ForeignKey('user.telegram_id'))
     activity_task_id: Mapped[int] = mapped_column(ForeignKey('activity_task.id'))
     proof_id: Mapped[int] = mapped_column(ForeignKey('task_completion_proof.id'))
-    status: Mapped[TaskCompletionStatus] = mapped_column(Enum(TaskCompletionStatus), default=TaskCompletionStatus.PENDING, server_default='PENDING')
     sent_on: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    checked_on: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), nullable=True)
     points: Mapped[int]
+
+    is_hidden: Mapped[bool] = mapped_column(default=False, server_default='false')
 
     activity_task = relationship('ActivityTask', back_populates='completions')
     user: Mapped['User'] = relationship('User', back_populates='activity_tasks')
@@ -76,6 +81,7 @@ class ActivityTask(BaseModel):
 
     niche: Mapped['Niche'] = relationship('Niche', back_populates='tasks')
     completions: Mapped[list['ActivityTaskCompletion']] = relationship('ActivityTaskCompletion', back_populates='activity_task')
+    proofs: Mapped[list['TaskCompletionProof']] = relationship('TaskCompletionProof', back_populates='task')
 
 
 class Activity(BaseModel):
@@ -90,7 +96,7 @@ class Activity(BaseModel):
     occupied_places: Mapped[int] = mapped_column(default=0)
     started_on: Mapped[datetime] = mapped_column(DateTime(timezone=True), default=datetime.utcnow, server_default=func.now())
     deadline: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
-    is_running: Mapped[bool] = mapped_column(default=True)
+    is_running: Mapped[bool] = mapped_column(default=False)
 
     niches: Mapped[list['Niche']] = relationship('Niche', back_populates='activity')
 
@@ -178,10 +184,15 @@ class TaskCompletionProof(BaseModel):
 
     id: Mapped[int] = mapped_column(primary_key=True, default=create_int_uid)
     telegram_id: Mapped[int] = mapped_column(ForeignKey('user.telegram_id'))
+    status: Mapped[TaskCompletionStatus] = mapped_column(Enum(TaskCompletionStatus), default=TaskCompletionStatus.PENDING, server_default='PENDING')
     activity_task_id: Mapped[int] = mapped_column(ForeignKey('activity_task.id'))
-    message_text: Mapped[str] = mapped_column(Text)
-    media: Mapped[str] = mapped_column(Text)
+    photo_ids: Mapped[list[int]] = mapped_column(JSONB(), default=[])
+    caption: Mapped[str | None] = mapped_column(Text, default=None, nullable=True)
     sent_on: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    checked_on: Mapped[datetime | None] = mapped_column(DateTime(timezone=True), default=None, nullable=True)
+
+    user: Mapped['User'] = relationship("User", back_populates='proofs')
+    task: Mapped['ActivityTask'] = relationship("ActivityTask", back_populates='proofs')
 
 
 class Task(BaseModel):
@@ -193,3 +204,23 @@ class Task(BaseModel):
     added_on: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
     planned_complete_date: Mapped[date]
     is_completed: Mapped[bool] = mapped_column(default=False)
+
+
+class ActivityUserEvent(BaseModel):
+    __tablename__ = "activity_user_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    type: Mapped[ActivityUserEventType] = mapped_column(Enum(ActivityUserEventType))
+    telegram_id: Mapped[int] = mapped_column(ForeignKey('user.telegram_id'))
+    activity_id: Mapped[int] = mapped_column(ForeignKey('activity.id'))
+    added_on: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class ActivityTaskUserEvent(BaseModel):
+    __tablename__ = "activity_task_user_events"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    type: Mapped[ActivityTaskUserEventType] = mapped_column(Enum(ActivityTaskUserEventType))
+    telegram_id: Mapped[int] = mapped_column(ForeignKey('user.telegram_id'))
+    activity_task_id: Mapped[int] = mapped_column(ForeignKey('activity_task.id'))
+    added_on: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

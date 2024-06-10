@@ -17,9 +17,28 @@ class ActivityTasksCompletionRepository(Repository):
         query = (
             select(ActivityTaskCompletion)
             .join(ActivityTaskCompletion.activity_task.and_(ActivityTask.activity_id == activity_id))
-            .where(ActivityTaskCompletion.checked_on.isnot(None))
+            .where(
+                ActivityTaskCompletion.is_hidden == False,
+            )
             .options(selectinload(ActivityTaskCompletion.user))
-            .order_by(ActivityTaskCompletion.checked_on.desc())
         )
 
         return (await self._session.execute(query)).scalars().all()
+
+    async def hide_all_user_completed_tasks(self, user_id: int, activity_id: int):
+        """Hide all tasks completed by user"""
+        query = (
+            select(ActivityTaskCompletion)
+            .where(
+                ActivityTaskCompletion.telegram_id == user_id,
+                ActivityTaskCompletion.activity_task_id == activity_id,
+            )
+        )
+
+        tasks = (await self._session.execute(query)).scalars().all()
+
+        for task in tasks:
+            task.is_hidden = True
+            await self._session.flush()
+
+        await self._session.commit()
