@@ -1,6 +1,6 @@
 
 from datetime import datetime
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 
 
@@ -14,6 +14,11 @@ class ActivityTaskData(BaseModel):
     deadline: datetime
     points: int
 
+    @field_validator('description')
+    def validate_description(cls, value: str):
+        new_value = value.replace('<p>', '').replace('</p>', '')
+        return new_value
+
 
 class ActivityTaskCreateData(BaseModel):
     name: str
@@ -21,11 +26,21 @@ class ActivityTaskCreateData(BaseModel):
     deadline: datetime
     points: int
 
+    @field_validator('description')
+    def validate_description(cls, value: str):
+        new_value = value.replace('<p>', '').replace('</p>', '')
+        return new_value
+
 
 class NicheData(BaseModel):
     name: str
     description: str
     task: ActivityTaskData
+
+    @field_validator('description')
+    def validate_description(cls, value: str):
+        new_value = value.replace('<p>', '').replace('</p>', '')
+        return new_value
 
 
 class ActivityDataCreate(BaseModel):
@@ -34,6 +49,11 @@ class ActivityDataCreate(BaseModel):
     fund: int
     total_places: int
     deadline: datetime
+
+    @field_validator('description')
+    def validate_description(cls, value: str):
+        new_value = value.replace('<p>', '').replace('</p>', '')
+        return new_value
 
 
 class ActivityDataResponse(BaseModel):
