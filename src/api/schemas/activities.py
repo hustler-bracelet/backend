@@ -32,7 +32,7 @@ class ActivityDataCreate(BaseModel):
     name: str
     description: str
     fund: int
-    total_places: int = Field(alias='places')
+    total_places: int
     deadline: datetime
 
 
