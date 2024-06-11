@@ -83,3 +83,7 @@ class ActivityTasksService(BaseDatabaseService):
         )
 
         await self._events_repo.create(event)
+
+    async def get_all(self, niche: Niche, user_id: int) -> list[ActivityTaskData]:
+        """Получить все задачи активности для ниши"""
+        return await self._repo.get_currents_by_niche(niche.id, user_id)

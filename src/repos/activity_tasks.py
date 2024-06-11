@@ -52,6 +52,44 @@ class ActivityTasksRepository(Repository):
 
         return (await self._session.execute(query)).scalars().first()
 
+    async def get_currents_by_niche(self, niche_id: int, user_id: int) -> ActivityTask | None:
+        query = (
+            select(ActivityTask)
+            .where(
+                ActivityTask.niche_id == niche_id,
+                ActivityTask.deadline >= datetime.now().astimezone(timezone('Europe/Moscow')),
+
+                # NOTE: проверяем что пользователю доступна задача
+                ActivityTask.id.not_in(
+                    select(ActivityTaskUserEvent.activity_task_id)
+                    .where(
+                        ActivityTaskUserEvent.telegram_id == user_id, 
+                        ActivityTaskUserEvent.type == ActivityTaskUserEventType.LEAVE,
+                    )
+                ),
+
+                # NOTE: проверяем что пользователь еще не выполнил задачу
+                ActivityTask.id.not_in(
+                    select(TaskCompletionProof.activity_task_id)
+                    .where(
+                        TaskCompletionProof.telegram_id == user_id,
+                        TaskCompletionProof.status == TaskCompletionStatus.PENDING,
+                    )
+                ),
+
+                # NOTE: проверяем что пользователь выполнил задачу
+                ActivityTask.id.not_in(
+                    select(ActivityTaskCompletion.activity_task_id)
+                    .where(
+                        ActivityTaskCompletion.telegram_id == user_id,
+                    )
+                )
+
+            )
+            .order_by(ActivityTask.deadline.asc())
+        )
+
+        return (await self._session.execute(query)).scalars().all()
 
 class ActivityTasksEventsRepository(Repository):
     def __init__(self, session):

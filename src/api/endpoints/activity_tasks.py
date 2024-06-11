@@ -39,6 +39,16 @@ async def create_new_task(niche_id: int, activity_task: ActivityTaskCreateData, 
     return await ActivityTasksService(session).create_new(activity_task, niche, activity_id=niche.activity_id)
 
 
+@router.get('/niches/{niche_id}/tasks')
+async def get_all_tasks_by_user(niche_id: int, user: TelegramUserID, session: Annotated[AsyncSession, Depends(get_session)]) -> list[ActivityTaskDataResponse]:
+    niche: Niche = await NichesService(session).get_by_id(niche_id)
+
+    if not niche:
+        raise HTTPException(status_code=404, detail='Niche not found')
+
+    return await ActivityTasksService(session).get_all(niche, user.telegram_id)
+
+
 @router.get('/tasks/{task_id}/status')
 async def get_task_status_for_user(task_id: int, user_id: TelegramUserID, session: Annotated[AsyncSession, Depends(get_session)]) -> ActivityTaskStatus:
     """Получить статус выполнения задачи"""
