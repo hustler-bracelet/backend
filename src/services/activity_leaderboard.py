@@ -32,13 +32,16 @@ class ActivityLeaderboardService(BaseDatabaseService):
                 'telegram_id': item.user.telegram_id,
                 'name': item.user.telegram_name,
                 'sum': item.points,
+                'created_at': item.sent_on,
             }
             for item in data
         ])
 
-        grouped_df: pd.DataFrame = df.groupby(['telegram_id', 'name'], as_index=False)['sum'].sum()
+        grouped_df: pd.DataFrame = df.groupby(['telegram_id', 'name', 'created_at'], as_index=False)['sum'].sum()
 
-        return grouped_df.to_dict(orient='records')
+        sorted_df = grouped_df.sort_values(by=['created_at'], ascending=False)
+
+        return sorted_df.to_dict(orient='records')
 
     async def get_leaderboard(self, activity: Activity) -> list[LeaderBoardItem]:
         """Получить лидерборд активности"""
