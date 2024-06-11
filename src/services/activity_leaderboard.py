@@ -53,7 +53,7 @@ class ActivityLeaderboardService(BaseDatabaseService):
 
         total_places: int = activity.total_places if activity.total_places <= current_places else current_places
 
-        for ctr, (sum, data) in enumerate(zip(distribute_funds(activity.fund, total_places), converted_data)):
+        for ctr, (sum, data) in enumerate(zip(distribute_funds(activity.fund, total_places), converted_data), start=1):
             leaderboard.append(
                 LeaderBoardItem(
                     user=UserSchema(

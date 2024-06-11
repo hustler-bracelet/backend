@@ -66,7 +66,7 @@ class AdminActivityNotificationService(BaseTelegramNotificationService):
                 [
                     types.InlineKeyboardButton(
                         text="⚡️ Запустить активность",
-                        callback_data=f"admin:activity:run:{activity_id}",
+                        callback_data=f"admin:activity_run:{activity_id}",
                     )
                 ]
             ]
