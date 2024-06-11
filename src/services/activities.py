@@ -192,7 +192,7 @@ class ActivityEventsService(BaseDatabaseService):
         user_leaderboard = await self._leaderboard_service.get_leaderboard_item_by_user(user, activity)
         niche = await self._niches_service.get_selected_niche(user.telegram_id)
 
-        if not niche:
+        if not niche or niche.activity_id != activity_id:
             raise ActivityError(f'Niche for user {user.telegram_id} not found')
 
         current_task = await self._tasks_service.get_current(niche.id, user.telegram_id)
