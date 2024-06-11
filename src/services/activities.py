@@ -120,7 +120,7 @@ class ActivityEventsService(BaseDatabaseService):
                 log.error(err_text)
                 raise InvalidDeadlineError(err_text)
 
-            await self._tasks_service.create_new(task, niche_db)
+            await self._tasks_service.create_new(task, niche_db, activity.id)
 
         log.info(f'Activity started -- id={activity.id}, name={activity.name}')
 
