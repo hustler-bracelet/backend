@@ -5,6 +5,7 @@ from typing import Optional
 
 
 from .leaderboard import LeaderBoardItem
+from .user import TelegramUserID
 
 
 class ActivityTaskData(BaseModel):
@@ -107,6 +108,7 @@ class ActivitySummaryResponse(BaseModel):
 
 class ActivityStartRequestData(BaseModel):
     activity: ActivityDataCreate
+    user: TelegramUserID
     niches: list[NicheData]
 
 

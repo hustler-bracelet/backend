@@ -10,6 +10,8 @@ from src.services.user import UsersService
 from src.services.activities import ActivityEventsService, ActivitiesService
 from src.scheduler.activity import schedule_activity_deadline
 from src.services.activities_status import ActivityStatusService
+from src.services.notifications.activity_admin import AdminActivityNotificationService
+from src.common.bot import BOT
 
 from src.api.schemas import ActivityStartResponseData, ActivityDataResponse, ActivityStartRequestData, ActivityUserStatusResponse
 from src.api.schemas.user import TelegramUserID
@@ -29,6 +31,12 @@ async def send_data_handler(
 ) -> ActivityStartResponseData:
 
     activity: Activity = await ActivityEventsService(session).create_event(data)
+
+    await AdminActivityNotificationService(BOT).send_notification(
+        data.user.telegram_id,
+        activity.id,
+        data,
+    )
 
     return ActivityStartResponseData(
         did_start_activity=True,
@@ -83,12 +91,10 @@ async def stop_activity(activity_id: int, session: Annotated[AsyncSession, Depen
     )
 
 
-@router.get('/activities/{activity_id}/run')
+@router.post('/activities/{activity_id}/run')
 async def run_activity(activity_id: int, session: Annotated[AsyncSession, Depends(get_session)]):
     """Запустить активность"""
     activity = await ActivityEventsService(session).start_event(activity_id)
-
-    schedule_activity_deadline(activity.id, activity.deadline)
 
     return DefaultResponse(
         success=True,

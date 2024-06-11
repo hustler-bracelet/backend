@@ -1,6 +1,7 @@
-from datetime import datetime
 import logging
+import pytz
 
+from datetime import datetime
 from src.database.models import Activity, Niche, User
 
 from sqlalchemy.orm import selectinload
@@ -44,6 +45,7 @@ class ActivitiesService(BaseDatabaseService):
         parsed_name: EmojiName = emoji_parser.parse()
 
         model = Activity(
+            is_running=False,
             **activity.model_dump(exclude=['name']),
             **parsed_name.model_dump(),
         )
@@ -139,7 +141,7 @@ class ActivityEventsService(BaseDatabaseService):
         if activity.is_running:
             raise ActivityError(f'Activity {activity_id} is already running')
 
-        if activity.deadline < datetime.utcnow():
+        if activity.deadline < datetime.now().astimezone(pytz.timezone('Europe/Moscow')):
             raise InvalidDeadlineError(f'Activity {activity_id} is already expired')
 
         log.info(f'Starting activity -- id={activity.id}, name={activity.name}')
@@ -148,7 +150,7 @@ class ActivityEventsService(BaseDatabaseService):
         await self._repo.update(activity)
 
         # NOTE: отправляем уведомление о начале активности
-        send_start_activity_notification.send(activity.id)
+        # send_start_activity_notification.send(activity.id)
 
         log.info(f'Activity started -- id={activity.id}, name={activity.name}')
 
