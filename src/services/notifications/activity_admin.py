@@ -48,7 +48,7 @@ class AdminActivityNotificationService(BaseTelegramNotificationService):
             "⚡️ Запуск активности\n\n"
             f"Название: {data.activity.name}\n"
             f"Описание: {data.activity.description}\n"
-            f"Мест: {data.activity.places}\n"
+            f"Мест: {data.activity.total_places}\n"
             f"Призовой фонд: {data.activity.fund} ₽\n"
         )
 
