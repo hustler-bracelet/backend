@@ -1,7 +1,15 @@
 
-class InvalidNameError(Exception):
+class CustomException(Exception):
+    ...
+
+
+class InvalidNameError(CustomException):
     pass
 
 
-class InvalidDeadlineError(Exception):
+class InvalidDeadlineError(CustomException):
+    pass
+
+
+class ActivityError(CustomException):
     pass

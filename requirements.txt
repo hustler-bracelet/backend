@@ -3,3 +3,8 @@ pydantic
 SQLAlchemy~=2.0.29
 asyncpg
 emoji
+pandas
+dramatiq
+aiogram
+redis
+apscheduler

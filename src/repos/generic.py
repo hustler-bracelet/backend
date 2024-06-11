@@ -1,9 +1,9 @@
 
-from typing import TypeVar, Generic, Literal, Type
+from typing import TypeVar, Generic, Type
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
-from src.database.models import BaseModel, create_int_uid
+from src.database.models import BaseModel
 
 
 M = TypeVar('M', bound=BaseModel)
@@ -71,9 +71,9 @@ class Repository(Generic[M]):
         self._session = session
         self._parser = SimpleQueryParser(delimiter='__')
 
-    async def get_by_pk(self, pk: int) -> M:
+    async def get_by_pk(self, pk: int, options: list | None = None) -> M:
         """Get record by primary key"""
-        return await self._session.get(self._model, pk)
+        return await self._session.get(self._model, pk, options=options)
 
     async def filter(self, **kwargs) -> list[M]:
         """
@@ -102,6 +102,23 @@ class Repository(Generic[M]):
 
         return await self._session.execute(query)
 
+    async def filter_by(self, options: list | None = None, order_by: list | None = None, **filters):
+        query = (
+            select(self._model)
+            .filter_by(**filters)
+        )
+
+        if hasattr(self._model, 'id'):
+            query = query.order_by(self._model.id.desc())
+
+        if options:
+            query = query.options(*options)
+
+        if order_by:
+            query = query.order_by(*order_by)
+
+        return (await self._session.execute(query)).scalars()
+
     async def create(self, model: M, with_commit: bool = True) -> M:
         """Create model in database"""
         self._session.add(model)
@@ -124,7 +141,7 @@ class Repository(Generic[M]):
 
     async def update(self, model: M, with_commit: bool = True) -> M:
         """Update model in database"""
-        self._session.merge(model)
+        await self._session.merge(model)
         await self._session.flush()
 
         if with_commit:
@@ -141,6 +158,10 @@ class Repository(Generic[M]):
             await self._session.commit()
 
         return model
+
+    async def get_all(self) -> list[M]:
+        """Get all records"""
+        return (await self._session.execute(select(self._model))).scalars().all()
 
     async def commit(self):
         await self._session.commit()
