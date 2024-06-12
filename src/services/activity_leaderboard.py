@@ -40,7 +40,7 @@ class ActivityLeaderboardService(BaseDatabaseService):
         aggregated_df = df.groupby('telegram_id').agg({
             'name': 'first',
             'sum': 'sum',
-            'created_at': 'min'
+            'created_at': 'max'
         }).reset_index()
 
         sorted_df = aggregated_df.sort_values(by=['sum', 'created_at'], ascending=[False, True])
