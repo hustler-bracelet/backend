@@ -3,7 +3,9 @@ from fastapi import APIRouter, Depends, status, HTTPException
 from typing import Annotated
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from src.services.notifications.proofs import ProofsNotificationService
 from src.services.proofs import ProofsService
+from src.common.bot import BOT
 
 from src.api.schemas.proofs import ProofResponse, ProofCreate, ProofLoadedReasonse
 from src.dependencies.session import get_session
@@ -37,6 +39,10 @@ async def accept_proof(proof_id: int, session: Annotated[AsyncSession, Depends(g
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
     await ProofsService(session).proof_accept(proof)
+    await ProofsNotificationService(BOT).send_accept_notification(
+        telegram_id=proof.telegram_id,
+        task=proof.task,
+    )
 
     return proof
 
@@ -49,5 +55,9 @@ async def reject_proof(proof_id: int, session: Annotated[AsyncSession, Depends(g
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
     await ProofsService(session).proof_decline(proof)
+    await ProofsNotificationService(BOT).send_decline_notification(
+        telegram_id=proof.telegram_id,
+        task=proof.task,
+    )
 
     return proof
