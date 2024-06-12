@@ -37,9 +37,13 @@ class ActivityLeaderboardService(BaseDatabaseService):
             for item in data
         ])
 
-        grouped_df: pd.DataFrame = df.groupby(['telegram_id', 'name', 'created_at'], as_index=False)['sum'].sum()
+        aggregated_df = df.groupby('telegram_id').agg({
+            'name': 'first',
+            'sum': 'sum',
+            'created_at': 'min'
+        }).reset_index()
 
-        sorted_df = grouped_df.sort_values(by=['created_at'], ascending=True)
+        sorted_df = aggregated_df.sort_values(by=['sum', 'created_at'], ascending=[False, True])
 
         return sorted_df.to_dict(orient='records')
 

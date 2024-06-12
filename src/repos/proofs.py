@@ -1,5 +1,5 @@
 
-from sqlalchemy import select
+from sqlalchemy import select, or_
 from sqlalchemy.orm import selectinload
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -26,3 +26,15 @@ class ProofsRepository(Repository):
             .order_by(TaskCompletionProof.sent_on.desc())
         )
         return (await self._session.execute(query)).scalars().all()
+
+    async def get_all_by_user(self, user_id: int, task_id: int) -> list[TaskCompletionProof]:
+        return (await self._session.execute(
+            select(TaskCompletionProof).where(
+                TaskCompletionProof.telegram_id == user_id,
+                TaskCompletionProof.activity_task_id == task_id,
+                or_(
+                    TaskCompletionProof.status == TaskCompletionStatus.PENDING,
+                    TaskCompletionProof.status == TaskCompletionStatus.VERIFIED,
+                )
+            )
+        )).scalars()

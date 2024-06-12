@@ -1,10 +1,11 @@
 
 from src.database.models import ActivityTask, Niche, Activity, User, ActivityTaskUserEvent, TaskCompletionProof
 from src.repos.activity_tasks import ActivityTasksRepository, ActivityTasksEventsRepository
+from src.repos.proofs import ProofsRepository
 from src.repos import Repository
 
 from src.api.schemas.activities import ActivityTaskData, ActivityTaskStatus
-from src.enums import ActivityTaskUserEventType
+from src.enums import ActivityTaskUserEventType, TaskCompletionStatus
 
 from src.common.bot import BOT
 
@@ -16,7 +17,7 @@ class ActivityTasksService(BaseDatabaseService):
     def post_init(self):
         self._repo = ActivityTasksRepository(self._session)
         self._events_repo = ActivityTasksEventsRepository(self._session)
-        self._proofs_repo = Repository(TaskCompletionProof, self._session)
+        self._proofs_repo = ProofsRepository(self._session)
         self._user_repo = Repository(User, self._session)
 
     async def create_new(self, activity_task: ActivityTaskData, niche: Niche, activity_id: int) -> ActivityTask:
@@ -53,7 +54,7 @@ class ActivityTasksService(BaseDatabaseService):
     async def get_status(self, task_id: int, telegram_id: int) -> ActivityTaskStatus:
         """Получить статус выполнения задачи"""
 
-        proofs = await self._proofs_repo.filter_by(telegram_id=telegram_id, activity_task_id=task_id)
+        proofs = await self._proofs_repo.get_all_by_user(user_id=telegram_id, task_id=task_id)
 
         if proofs.all():
             return ActivityTaskStatus(
