@@ -32,16 +32,17 @@ async def create_proof(proof: ProofCreate, session: Annotated[AsyncSession, Depe
 
 
 @router.post('/proofs/{proof_id}/accept')
-async def accept_proof(proof_id: int, session: Annotated[AsyncSession, Depends(get_session)]) -> ProofResponse:
+async def accept_proof(proof_id: int, session: Annotated[AsyncSession, Depends(get_session)], extra_points: int = 0) -> ProofResponse:
     proof = await ProofsService(session).get_by_id(proof_id)
 
     if not proof:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
-    await ProofsService(session).proof_accept(proof)
+    await ProofsService(session).proof_accept(proof, extra_points=extra_points)
     await ProofsNotificationService(BOT).send_accept_notification(
         telegram_id=proof.telegram_id,
         task=proof.task,
+        extra_points=extra_points
     )
 
     return proof

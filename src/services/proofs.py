@@ -30,7 +30,7 @@ class ProofsService(BaseDatabaseService):
     async def get_by_id(self, proof_id: int) -> TaskCompletionProof:
         return await self._repo.get_by_pk(proof_id, options=[selectinload(TaskCompletionProof.task)])
 
-    async def proof_accept(self, proof: TaskCompletionProof):
+    async def proof_accept(self, proof: TaskCompletionProof, extra_points: int = 0):
         proof = await self.get_by_id(proof.id)
         proof.status = TaskCompletionStatus.VERIFIED
         await self._repo.update(proof, with_commit=False)
@@ -39,7 +39,7 @@ class ProofsService(BaseDatabaseService):
             telegram_id=proof.telegram_id,
             activity_task_id=proof.activity_task_id,
             proof_id=proof.id,
-            points=proof.task.points,
+            points=proof.task.points + extra_points,
         )
         await self._task_complete_repo.create(task, with_commit=False)
         await self._session.commit()
