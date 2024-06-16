@@ -6,6 +6,7 @@ from sqlalchemy.ext.asyncio import AsyncSession
 from src.services.notifications.proofs import ProofsNotificationService
 from src.services.proofs import ProofsService
 from src.common.bot import BOT
+from src.enums.activity import TaskCompletionStatus
 
 from src.api.schemas.proofs import ProofResponse, ProofCreate, ProofLoadedReasonse
 from src.dependencies.session import get_session
@@ -38,6 +39,9 @@ async def accept_proof(proof_id: int, session: Annotated[AsyncSession, Depends(g
     if not proof:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
 
+    if proof.status != TaskCompletionStatus.PENDING:
+        return proof
+
     await ProofsService(session).proof_accept(proof, extra_points=extra_points)
     await ProofsNotificationService(BOT).send_accept_notification(
         telegram_id=proof.telegram_id,
@@ -54,6 +58,9 @@ async def reject_proof(proof_id: int, session: Annotated[AsyncSession, Depends(g
 
     if not proof:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND)
+
+    if proof.status != TaskCompletionStatus.PENDING:
+        return proof
 
     await ProofsService(session).proof_decline(proof)
     await ProofsNotificationService(BOT).send_decline_notification(

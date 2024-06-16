@@ -1,5 +1,6 @@
 
 from sqlalchemy.ext.asyncio import AsyncSession
+from aiogram import Bot
 
 
 class BaseDatabaseService:
@@ -10,3 +11,8 @@ class BaseDatabaseService:
 
     def post_init(self):
         pass
+
+
+class BotService:
+    def __init__(self, bot: Bot) -> None:
+        self._bot = bot

@@ -19,6 +19,9 @@ from src.enums import (
     ActivityUserEventType,
     ActivityTaskUserEventType,
     TaskCompletionStatus,
+    TransactionType,
+    TransactionStatus,
+    NotificationType,
 )
 
 
@@ -224,3 +227,35 @@ class ActivityTaskUserEvent(BaseModel):
     telegram_id: Mapped[int] = mapped_column(ForeignKey('user.telegram_id'))
     activity_task_id: Mapped[int] = mapped_column(ForeignKey('activity_task.id'))
     added_on: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+
+
+class BraceletTransaction(BaseModel):
+    __tablename__ = "bracelet_transaction"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    telegram_id: Mapped[int] = mapped_column(ForeignKey('user.telegram_id'))
+    type: Mapped[TransactionType] = mapped_column(Enum(TransactionType))
+    status: Mapped[TransactionStatus] = mapped_column(Enum(TransactionStatus))
+    amount: Mapped[float]
+    reason: Mapped[str] = mapped_column(Text, nullable=True)
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    processed_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), nullable=True, server_default=None)
+
+
+class BraceletSubscription(BaseModel):
+    __tablename__ = "bracelet_subscription"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    telegram_id: Mapped[int] = mapped_column(ForeignKey('user.telegram_id'))
+    transaction_id: Mapped[int] = mapped_column(ForeignKey('bracelet_transaction.id'))
+    started_on: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())
+    will_end_on: Mapped[datetime] = mapped_column(DateTime(timezone=True))
+
+
+class NotificationRecords(BaseModel):
+    __tablename__ = "notification_records"
+
+    id: Mapped[int] = mapped_column(primary_key=True)
+    telegram_id: Mapped[int] = mapped_column(ForeignKey('user.telegram_id'))
+    type: Mapped[NotificationType] = mapped_column(Enum(NotificationType))
+    created_at: Mapped[datetime] = mapped_column(DateTime(timezone=True), server_default=func.now())

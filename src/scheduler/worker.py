@@ -10,13 +10,15 @@ from apscheduler.executors.asyncio import AsyncIOExecutor
 DEFAULT_REDIS_SCHEDULER_DB = 1
 
 
+default_job_store = RedisJobStore(
+    db=DEFAULT_REDIS_SCHEDULER_DB,
+    host=config.REDIS_HOST,
+    port=config.REDIS_PORT,
+    password=config.REDIS_PASSWORD,
+)
+
 jobstores = {
-    'default': RedisJobStore(
-        db=DEFAULT_REDIS_SCHEDULER_DB,
-        host=config.REDIS_HOST,
-        port=config.REDIS_PORT,
-        password=config.REDIS_PASSWORD,
-    )
+    'default': default_job_store,
 }
 
 executors = {

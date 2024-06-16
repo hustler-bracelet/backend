@@ -11,3 +11,5 @@ REDIS_PORT = os.getenv('REDIS_PORT')
 REDIS_PASSWORD = os.getenv('REDIS_PASSWORD')
 
 BOT_TOKEN = os.getenv('TOKEN')
+
+CHANNEL_ID = os.getenv('CHANNEL_ID')

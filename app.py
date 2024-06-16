@@ -13,6 +13,8 @@ from src.api import (
     proofs_router,
 )
 from src.api.schemas.default import DefaultResponse
+from src.scheduler.worker import scheduler, default_job_store
+from src.scheduler.subscription import check_sub_job, check_sub_noti_job
 
 
 logging.basicConfig(
@@ -45,7 +47,15 @@ app.include_router(leaderboard_router)
 app.include_router(proofs_router)
 
 
-app.add_event_handler('startup', lambda: logging.info('Application started'))
+async def startup():
+    scheduler.remove_all_jobs(default_job_store)
+
+    scheduler.add_job(check_sub_job, id='check_sub_job', trigger='interval', hours=1, max_instances=1, replace_existing=True)
+    scheduler.add_job(check_sub_noti_job, id='check_sub_noti_job', trigger='interval', hours=1, max_instances=1, replace_existing=True)
+
+    scheduler.start()
+
+app.add_event_handler('startup', startup)
 
 
 def handle_exception(request, exc):
