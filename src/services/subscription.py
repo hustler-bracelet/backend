@@ -25,7 +25,8 @@ class SubscriptionService(BaseDatabaseService):
         subscription = await self._repo.get_last_subscription(user_id)
 
         if not subscription:
-            return False
+            # NOTE: временно для челов которые не зашли в бота еще
+            return True
 
         if subscription.will_end_on < datetime.now(tz=pytz.timezone('Europe/Moscow')):
             return False
