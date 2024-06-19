@@ -1,4 +1,5 @@
 import pytz
+import logging
 
 from datetime import datetime
 
@@ -26,10 +27,14 @@ class SubscriptionService(BaseDatabaseService):
 
         if not subscription:
             # NOTE: временно для челов которые не зашли в бота еще
+            print(f'{user_id} NOT SUB')
             return True
 
         if subscription.will_end_on < datetime.now(tz=pytz.timezone('Europe/Moscow')):
+            print(f'{user_id} SUB EXPIRED')
             return False
+
+        print(f'{user_id} SUB OK')
 
         return True
 
@@ -49,14 +54,19 @@ class SubscriptionJobService(SubscriptionService):
 
             # NOTE: все ок, подписка не истекла
             if result:
+                print(f'{user.telegram_id} SUB OK')
                 continue
 
             # NOTE: подписка истекла
             if await self._channel.is_user_in_channel(user.telegram_id):
                 await self._channel.kick_user(user.telegram_id)
+                print(f'{user.telegram_id} SUB KICKED')
 
             else:
+                print(f'USER {user.telegram_id} NOT IN CHANNEL, NOT KICKED')
                 continue
+
+            print(f'{user.telegram_id} SUB EXPIRED')
 
             await self._notifications.send_notification(user.telegram_id, already_expired=True)
 

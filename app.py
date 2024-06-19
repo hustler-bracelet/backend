@@ -50,8 +50,8 @@ app.include_router(proofs_router)
 async def startup():
     scheduler.remove_all_jobs(default_job_store)
 
-    scheduler.add_job(check_sub_job, id='check_sub_job', trigger='interval', hours=1, max_instances=1, replace_existing=True)
-    scheduler.add_job(check_sub_noti_job, id='check_sub_noti_job', trigger='interval', hours=1, max_instances=1, replace_existing=True)
+    scheduler.add_job(check_sub_job, id='check_sub_job', trigger='interval', minutes=5, max_instances=1, replace_existing=True)
+    scheduler.add_job(check_sub_noti_job, id='check_sub_noti_job', trigger='interval', minutes=5, max_instances=1, replace_existing=True)
 
     scheduler.start()
 
